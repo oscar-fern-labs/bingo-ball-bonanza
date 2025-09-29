@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎱 Bingo Ball Raffle Machine 🎱</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Fredoka:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Fredoka', cursive;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .title {
+            font-family: 'Bungee', cursive;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .main-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+        
+        .draw-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            min-width: 350px;
+        }
+        
+        .countdown-display {
+            font-size: 8rem;
+            font-family: 'Bungee', cursive;
+            opacity: 0;
+            animation: none;
+            text-shadow: 0 0 30px rgba(255,255,255,0.8);
+        }
+        
+        .countdown-display.active {
+            animation: pulse 1s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        
+        .ball-display {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            font-family: 'Bungee', cursive;
+            box-shadow: 
+                inset -20px -20px 40px rgba(0,0,0,0.3),
+                0 20px 40px rgba(0,0,0,0.3),
+                inset 20px 20px 40px rgba(255,255,255,0.2);
+            position: relative;
+            transform: scale(0);
+            transition: transform 0.5s ease;
+        }
+        
+        .ball-display.show {
+            animation: ballReveal 1.5s ease forwards;
+        }
+        
+        @keyframes ballReveal {
+            0% { 
+                transform: scale(0) rotate(0deg);
+                opacity: 0;
+            }
+            50% { 
+                transform: scale(1.3) rotate(180deg);
+                opacity: 1;
+            }
+            70% {
+                transform: scale(0.9) rotate(270deg);
+            }
+            100% { 
+                transform: scale(1) rotate(360deg);
+                opacity: 1;
+            }
+        }
+        
+        .ball-display::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8), rgba(255,255,255,0.2));
+            filter: blur(5px);
+        }
+        
+        .draw-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            font-family: 'Bungee', cursive;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .draw-button:hover:not(:disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+        
+        .draw-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: scale(0.95);
+        }
+        
+        .draw-button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .balls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+        }
+        
+        .ball-number {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            cursor: default;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .ball-number.available {
+            background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            color: white;
+            transform: scale(1);
+        }
+        
+        .ball-number.available:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+        
+        .ball-number.drawn {
+            background: #2d3436;
+            color: #636e72;
+            opacity: 0.4;
+            transform: scale(0.85);
+        }
+        
+        .ball-number.just-drawn {
+            animation: drawAnimation 1s ease;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+        }
+        
+        @keyframes drawAnimation {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.5) rotate(180deg); box-shadow: 0 0 30px rgba(255,107,107,0.8); }
+            100% { transform: scale(0.85) rotate(360deg); }
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+            font-size: 1.2rem;
+            background: rgba(0,0,0,0.2);
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin-top: 20px;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stat-value {
+            font-family: 'Bungee', cursive;
+            color: #ffd93d;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+        }
+        
+        .reset-button {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-family: 'Fredoka', cursive;
+            font-weight: 600;
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+        
+        .reset-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        
+        .history {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+        }
+        
+        .history-title {
+            font-family: 'Bungee', cursive;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .history-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .history-item {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .history-number {
+            font-family: 'Bungee', cursive;
+            color: #ffd93d;
+        }
+        
+        .fireworks {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .firework {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: explode 1s ease-out forwards;
+        }
+        
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">🎱 BINGO BALL BONANZA 🎱</h1>
+    
+    <div class="main-container">
+        <div class="draw-section">
+            <div class="countdown-display" id="countdown"></div>
+            <div class="ball-display" id="ballDisplay">
+                <span id="ballNumber"></span>
+            </div>
+            <button class="draw-button" id="drawButton" onclick="drawBall()">
+                Draw Ball!
+            </button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat">
+                <span>Remaining:</span>
+                <span class="stat-value" id="remaining">40</span>
+            </div>
+            <div class="stat">
+                <span>Drawn:</span>
+                <span class="stat-value" id="drawn">0</span>
+            </div>
+        </div>
+        
+        <div class="balls-grid" id="ballsGrid"></div>
+        
+        <div class="history" id="historySection" style="display: none;">
+            <div class="history-title">Draw Order</div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+        
+        <button class="reset-button" onclick="resetGame()">Reset Game</button>
+    </div>
+    
+    <div class="fireworks" id="fireworks"></div>
+    
+    <script>
+        let availableBalls = [];
+        let drawnBalls = [];
+        let isDrawing = false;
+        
+        function initGame() {
+            availableBalls = Array.from({length: 40}, (_, i) => i + 1);
+            drawnBalls = [];
+            updateDisplay();
+            renderBallsGrid();
+            document.getElementById('historySection').style.display = 'none';
+            document.getElementById('historyList').innerHTML = '';
+        }
+        
+        function renderBallsGrid() {
+            const grid = document.getElementById('ballsGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 1; i <= 40; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'ball-number available';
+                ball.id = `grid-ball-${i}`;
+                ball.textContent = i;
+                grid.appendChild(ball);
+            }
+        }
+        
+        function updateDisplay() {
+            document.getElementById('remaining').textContent = availableBalls.length;
+            document.getElementById('drawn').textContent = drawnBalls.length;
+            
+            if (availableBalls.length === 0) {
+                document.getElementById('drawButton').disabled = true;
+                document.getElementById('drawButton').textContent = 'All Drawn!';
+            }
+        }
+        
+        async function drawBall() {
+            if (isDrawing || availableBalls.length === 0) return;
+            
+            isDrawing = true;
+            const button = document.getElementById('drawButton');
+            const ballDisplay = document.getElementById('ballDisplay');
+            const ballNumber = document.getElementById('ballNumber');
+            const countdown = document.getElementById('countdown');
+            
+            button.disabled = true;
+            ballDisplay.classList.remove('show');
+            ballNumber.textContent = '';
+            
+            // Countdown animation
+            for (let i = 3; i > 0; i--) {
+                countdown.textContent = i;
+                countdown.classList.remove('active');
+                void countdown.offsetWidth; // Force reflow
+                countdown.classList.add('active');
+                await sleep(1000);
+            }
+            
+            // Draw random ball
+            const randomIndex = Math.floor(Math.random() * availableBalls.length);
+            const chosenBall = availableBalls[randomIndex];
+            
+            // Remove from available and add to drawn
+            availableBalls.splice(randomIndex, 1);
+            drawnBalls.push(chosenBall);
+            
+            // Show the ball with animation
+            ballNumber.textContent = chosenBall;
+            ballDisplay.classList.add('show');
+            
+            // Update grid ball
+            const gridBall = document.getElementById(`grid-ball-${chosenBall}`);
+            gridBall.classList.remove('available');
+            gridBall.classList.add('just-drawn');
+            
+            // Fireworks effect
+            createFireworks();
+            
+            // Add to history
+            updateHistory(chosenBall);
+            
+            setTimeout(() => {
+                gridBall.classList.remove('just-drawn');
+                gridBall.classList.add('drawn');
+            }, 1000);
+            
+            // Update stats
+            updateDisplay();
+            
+            // Re-enable button
+            setTimeout(() => {
+                button.disabled = false;
+                isDrawing = false;
+            }, 2000);
+        }
+        
+        function updateHistory(ballNum) {
+            const historySection = document.getElementById('historySection');
+            const historyList = document.getElementById('historyList');
+            
+            historySection.style.display = 'block';
+            
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <span>#${drawnBalls.length}:</span>
+                <span class="history-number">${ballNum}</span>
+            `;
+            
+            historyList.appendChild(item);
+        }
+        
+        function createFireworks() {
+            const container = document.getElementById('fireworks');
+            container.innerHTML = '';
+            
+            const colors = ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4ecdc4', '#ff8e53', '#a8e6cf'];
+            
+            for (let i = 0; i < 30; i++) {
+                const firework = document.createElement('div');
+                firework.className = 'firework';
+                firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                const angle = (Math.PI * 2 * i) / 30;
+                const velocity = 100 + Math.random() * 200;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+                
+                firework.style.animation = `explode 1s ease-out forwards`;
+                firework.style.transform = `translate(${tx}px, ${ty}px)`;
+                
+                container.appendChild(firework);
+                
+                // Custom animation for each particle
+                firework.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                    { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 1000,
+                    easing: 'ease-out'
+                });
+            }
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 1000);
+        }
+        
+        function resetGame() {
+            if (confirm('Are you sure you want to reset the game? This will clear all drawn balls.')) {
+                initGame();
+                document.getElementById('ballDisplay').classList.remove('show');
+                document.getElementById('ballNumber').textContent = '';
+                document.getElementById('drawButton').disabled = false;
+                document.getElementById('drawButton').textContent = 'Draw Ball!';
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Initialize game on load
+        initGame();
+    </script>
+</body>
+</html>
